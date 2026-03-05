@@ -1,5 +1,5 @@
 [![Tutorial](https://img.shields.io/badge/Tutorial-Phylogenomics-red.svg)](https://github.com/eparisis/microbial-assembly-demo)
-[![Flye](https://img.shields.io/badge/GTDB--Tk-2.4.1-orange.svg)](https://github.com/mikolmogorov/Flye)
+[![Flye](https://img.shields.io/badge/Flye-blue.svg)](https://github.com/mikolmogorov/Flye)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 
 # Microbial Genome Assembly with Flye
