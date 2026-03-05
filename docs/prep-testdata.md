@@ -1,99 +1,207 @@
-# Benchmark Data Instructions
+# Preparing Test Data
 
-## Download from NCBI SRA
+This guide covers how to download benchmark datasets and downsample them to create manageable test data for running assembly tools locally.
 
-For SRA downloads you need to download the SRA Toolkit from [here](https://github.com/ncbi/sra-tools/wiki/02.-Installing-SRA-Toolkit).
+---
 
-Configure your setting and run the following command to donwload a dataset:
+## Table of Contents
+
+1. [Downloading from NCBI SRA](#downloading-from-ncbi-sra)
+2. [Downsampling with Rasusa](#downsampling-with-rasusa)
+3. [Fastq Statistics](#fastq-statistics)
+4. [Benchmark Datasets](#benchmark-datasets)
+   - [Metagenomic Datasets](#metagenomic-datasets)
+   - [Microbial Isolate Datasets](#microbial-isolate-datasets)
+
+---
+
+## Downloading from NCBI SRA
+
+For SRA downloads you need the SRA Toolkit installed from [here](https://github.com/ncbi/sra-tools/wiki/02.-Installing-SRA-Toolkit).
+
+### Prefetch
 
 ```bash
 prefetch SRR8073716
 ```
 
-`--max-size` may be needed to download larger files than 20GB.
+Use `--max-size` for files larger than 20 GB. Data will be downloaded to the SRA configured directory from your setup.
 
-The data will be downloaded to the SRA configured directory from your setup.
-
-Then run the following command to extraxt the fastq data:
+### Extract FASTQ
 
 ```bash
 fastq-dump SRR8073716 -O <outdir> --split-files --gzip
 ```
 
-`fasterq-dump` will also split the fastq files into R1 and R2 files.
-`--split-files` is required to split the fastq files into R1 and R2 files otherwise the data will be merged into a single file.
+`--split-files` is required to split paired-end data into R1 and R2 files, otherwise everything merges into a single file. `fasterq-dump` also works but does not support `--gzip` directly.
 
-You can also use `parallel-fastq-dump` a wrapper to run `fastq-dump` in parallel. You can install it using conda:
+### Parallel Download (Recommended)
 
-`mamba install parallel-fastq-dump`
+For faster downloads, use `parallel-fastq-dump`:
 
 ```bash
-parallel-fastq-dump --sra-id SRR8073716 --threads 4 --outdir out/ --split-files --gzip --tmpdir tmp/
+mamba install -c bioconda parallel-fastq-dump
 ```
 
-You will need to set a temporary directory for the download with `--tmpdir` to avoid errors with large files.
+```bash
+parallel-fastq-dump \
+    --sra-id SRR8073716 \
+    --threads 4 \
+    --outdir out/ \
+    --split-files \
+    --gzip \
+    --tmpdir tmp/
+```
 
-## Downsampling
+Set `--tmpdir` to avoid errors with large files filling up the default temp directory.
 
-For large datasets, you can downsample the data to a smaller size using [`rasusa`](https://github.com/mbhall88/rasusa) without introducing bias.
+---
 
-Downsampling was performed using the following command:
+## Downsampling with Rasusa
 
-For the `mini datasets` a `0.2Mb` of data was chosen to be downsampled to.
-For the `mid datasets` a `2Gb` of data was chosen to be downsampled to.
+For large datasets, downsample to a smaller size using [`rasusa`](https://github.com/mbhall88/rasusa) without introducing bias.
+
+```bash
+mamba install -c bioconda rasusa
+```
+
+### Suggested Sizes
+
+| Dataset size | Use case |
+|-------------|----------|
+| `0.2Mb` | Mini — quick tool testing, CI/CD |
+| `10Mb` | Small — local testing, parameter exploration |
+| `2Gb` | Mid — realistic benchmarking |
+
+### Paired-End Reads
 
 ```bash
 rasusa reads --bases 0.2Mb -o out1.fastq.gz -o out2.fastq.gz input_R1.fastq.gz input_R2.fastq.gz
 ```
 
-To get `fastq` statistics you can use the following command:
+### Long Reads (Single File)
+
+```bash
+rasusa reads --bases 10Mb -o downsampled.fastq.gz input.fastq.gz
+```
+
+---
+
+## Fastq Statistics
+
+Check your data before and after downsampling:
 
 ```bash
 seqkit stats -Ta -j 14 **/*.fastq.gz | tee Full_Fastq_Stats.tsv
 ```
 
-This will fetch statistics for all `.fastq.gz` files in sub-directories and save the results to `Full_Fastq_Stats.tsv`.
+This fetches statistics for all `.fastq.gz` files in sub-directories and saves results to `Full_Fastq_Stats.tsv`.
 
-# Benchmark Datasets
+---
 
-## Metagenomic Datasets
+## Benchmark Datasets
 
-### DNASEQ Simulated Dataset
+### Metagenomic Datasets
 
-This Dataset is a CAMISIM simulated ONT dataset consisting of 73 strains. It is mainly used for profiling and classification benchmarks. Reference genomes can be found in the [GenomeTable](./DNASEQ_Simulated_reads/GenomeTable.tsv) while the profile composition can be found under [taxonomic_profile_0.txt](./DNASEQ_Simulated_reads/taxonomic_profile_0.txt).
+#### ZymoBIOMICS Microbial Community Standards
 
-### ZymoBIOMICS Microbial Community Standards
+The ZymoBIOMICS mock communities are widely used benchmarks with known composition, making them ideal for evaluating assembly and binning pipelines.
 
-#### Zymo Even
+##### Zymo Even
 
-Productname: [D6322](https://zymoresearch.eu/collections/zymobiomics-microbial-community-standards/products/zymobiomics-hmw-dna-standard).
+Product: [D6322](https://zymoresearch.eu/collections/zymobiomics-microbial-community-standards/products/zymobiomics-hmw-dna-standard) — HMW DNA Standard (even distribution).
 
-*__Zymo_HMW_R104-GridION-EVEN__* is the Zymo even mock community deep sequenced from [this publication](https://www.nature.com/articles/s41592-022-01539-7?fromPaywallRec=false#Sec2) and can be downloaded from [this ENA link](https://www.ebi.ac.uk/ena/browser/view/PRJEB48692) (About ~49GB). This dataset can be subsetted to different sequencing depths.
+**Zymo_HMW_R104-GridION-EVEN** is the Zymo even mock community deep sequenced from [this publication](https://www.nature.com/articles/s41592-022-01539-7) and can be downloaded from [ENA PRJEB48692](https://www.ebi.ac.uk/ena/browser/view/PRJEB48692) (~49 GB). This dataset can be subsetted to different sequencing depths.
 
-The *__Zymo_HMW_EVEN_DNASEQ__* is a shallow sequencing run on the MinION from the DNASEQ AITOL_A project (Barcode 22).
+##### Zymo Log
 
-#### Zymo Log
+Product: [D6310](https://zymoresearch.eu/collections/zymobiomics-microbial-community-standards/products/zymobiomics-microbial-community-standard-ii-log-distribution) — Log distribution.
 
-Productname: [D6310](https://zymoresearch.eu/collections/zymobiomics-microbial-community-standards/products/zymobiomics-microbial-community-standard-ii-log-distribution).
+**Zymo-GridION-LOG-BB-SN** is a mid-depth sequencing run of the log-distributed mock community HMW DNA standard. Download from the [LomanLab mock community repo](https://github.com/LomanLab/mockcommunity?tab=readme-ov-file#data-availability) (~16 GB, with a ~146 GB deep sequencing run also available). Reference: [Nicholls et al., GigaScience 2019](https://academic.oup.com/gigascience/article/8/5/giz043/5486468).
 
-*__Zymo-GridION-LOG-BB-SN__* is a mid depth sequenced run from the Zymobiomics log distributed mock community HMW DNA standard. Dataset can be downloaded [here](https://github.com/LomanLab/mockcommunity?tab=readme-ov-file#data-availability) and is about ~16GB. An very deep sequncing run can also be downloaded from the same repo (~146GB). (Possible reference [here](https://academic.oup.com/gigascience/article/8/5/giz043/5486468?login=false#136473957))
+##### Zymo Reference Genomes
 
-#### Zymo Reference Genomes
+Reference genome sequences for the Zymo sets can be found in the [Reference_Genomes repo](./Zymo_Reference_Genomes/).
 
-Reference genome sequences for the Zymo set can be found in the [Reference_Genomes repo](./Zymo_Reference_Genomes/).
+#### ZymoBIOMICS Fecal Reference (ONT PromethION)
 
-### BMock12
+Product: [D6323](https://www.zymoresearch.com/collections/zymobiomics-microbial-community-standards/products/zymobiomics-fecal-reference-with-trumatrix-technology) — Fecal Reference with TruMatrix Technology.
 
-[Bmock12](https://github.com/Kirk3gaard/MicroBench) is a collection of mono cultures, and metagenomic samples. Data has been deposited to the ENA ([PRJEB85558](https://www.ebi.ac.uk/ena/browser/view/PRJEB85558)).
+A high-depth metagenomic dataset from Oxford Nanopore, ideal for benchmarking metagenome assembly and binning (this is the dataset used in the MAG recovery figures in the main tutorial).
 
-### MicroBench Metagenomic Datasets
+| Detail | Value |
+|--------|-------|
+| **Platform** | PromethION |
+| **Flow cell** | FLO-PRO114M |
+| **Chemistry** | R10.4.1 |
+| **Basecall model** | v5.0.0 |
+| **Modified bases** | 4mC, 5mC, 6mA |
+| **Replicates** | 2 biological, 1 flow cell each |
 
-[MicroBench](https://github.com/Kirk3gaard/MicroBench) is a dataset of 1000 metagenomic samples sequenced on the MinION platform. The dataset can be downloaded from [ENA](https://www.ebi.ac.uk/ena/browser/view/PRJEB85558).
+| Data | Size |
+|------|------|
+| Raw (POD5) | 4.6 TB |
+| Basecalls (BAM) | 850 GB |
+| Analysis | 1.2 TB |
 
-## Microbial Isolate Datasets
+**Download:**
 
-### MicroBench Microbial Isolate Datasets
+```bash
+# Full dataset
+aws s3 sync --no-sign-request s3://ont-open-data/zymo_fecal_2025.05 zymo_fecal_2025.05
 
-MicroBench newest datasets are R10 Promethion Datasets with the Rapid Barcoding kit (checkout the excel file for more details).
+# Or browse files first
+# https://42basepairs.com/browse/s3/ont-open-data/zymo_fecal_2025.05
+```
 
-[Anabaena variabilis PCC 7120](https://github.com/Kirk3gaard/MicroBench#anabaena-variabilis-pcc-7120-dsm-107007) datasets can be found from R10 Promethion Datasets with Rapid Barcoding Kit and fast, hac and sup basecalling models aswell as raw pod5 files.
+The analysis was performed with metaMDBG (v1.0), SemiBin2 (v2.1.0), MetaBAT2 (v2.17), DAS Tool (v1.1.7), and CheckM2 (v1.0.2). See the [ONT metagenomics application note](https://nanoporetech.com/resource-centre/oxford-nanopore-sequencing-provides-superior-metagenome-assembled-genome-recovery-and-strain-level-resolution-from-a-complex-microbiome) for details.
+
+> **Tip**: This dataset is very large. For local testing, download only the basecalls and downsample with rasusa to 1-5 Gb.
+
+#### Pathogen Surveillance (ONT GridION)
+
+A metagenomic sequencing dataset for pathogen surveillance using Oxford Nanopore's rapid metagenomic surveillance protocol.
+
+| Detail | Value |
+|--------|-------|
+| **Sample** | Human sputum spiked with Zeptometrix Respiratory Panel 2.1 |
+| **Targets** | DNA viruses, RNA viruses, bacteria, atypical bacteria |
+| **Platform** | GridION |
+| **Flow cell** | FLO-MIN114 |
+| **Chemistry** | R10.4.1 |
+| **Basecall model** | HAC v4.3.0 (rebasecalled with Dorado v0.9.1) |
+| **Replicates** | 3 technical per panel (2 panels) |
+
+| Data | Size |
+|------|------|
+| Raw (POD5) | 255 GB |
+| Basecalls (BAM) | 37 GB |
+| Analysis | 13 MB |
+
+**Download:**
+
+```bash
+# Full dataset
+aws s3 sync --no-sign-request s3://ont-open-data/pathogen_surveillance_2025.09 pathogen_surveillance_2025.09
+
+# Or browse files first
+# https://42basepairs.com/browse/s3/ont-open-data/pathogen_surveillance_2025.09
+```
+
+Analysis was performed with [wf-metagenomics](https://github.com/epi2me-labs/wf-metagenomics) (v2.13.0). More details at the [epi2me dataset page](https://epi2me.nanoporetech.com/pathogen_surveillance_2025.09/).
+
+> **Tip**: For local testing, download just the basecalls (37 GB) and downsample.
+
+#### BMock12 / MicroBench Metagenomic Datasets
+
+[BMock12](https://github.com/Kirk3gaard/MicroBench) is a collection of mono cultures and metagenomic samples. [MicroBench](https://github.com/Kirk3gaard/MicroBench) extends this with 1000 metagenomic samples sequenced on MinION. Data deposited at ENA: [PRJEB85558](https://www.ebi.ac.uk/ena/browser/view/PRJEB85558).
+
+---
+
+### Microbial Isolate Datasets
+
+#### MicroBench Isolate Datasets
+
+[MicroBench](https://github.com/Kirk3gaard/MicroBench) newest datasets are R10 PromethION datasets with the Rapid Barcoding Kit (check the repo for details).
+
+[Anabaena variabilis PCC 7120](https://github.com/Kirk3gaard/MicroBench#anabaena-variabilis-pcc-7120-dsm-107007) datasets are available from R10 PromethION with Rapid Barcoding Kit, including fast, hac, and sup basecalling models as well as raw pod5 files.
