@@ -1,0 +1,41 @@
+{
+    "name": "BioInfo Dev",
+    "image": "ubuntu:22.04",
+    "remoteUser": "root",
+    "runArgs": ["--privileged"],
+
+    // Install MicroMamba
+    "features": {
+        "ghcr.io/devcontainers/features/python:1": {},
+        "ghcr.io/rocker-org/devcontainer-features/miniforge:2": {
+            "channels": ["conda-forge", "bioconda"]
+        },
+        "ghcr.io/devcontainers/features/java:1": {},
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {}
+    },
+
+    // Configure tool-specific properties.
+    "customizations": {
+        // Configure properties specific to VS Code.
+        "vscode": {
+            // Set *default* container specific settings.json values on container create.
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/conda/bin/python",
+                "workbench.colorTheme": "GitHub Dark",
+                "workbench.iconTheme": "a-file-icon-vscode"
+            },
+
+            // Add the IDs of extensions you want installed when the container is created.
+            "extensions": [
+                "ms-python.python", 
+                "ms-python.vscode-pylance", 
+                "nf-core.nf-core-extensionpack",
+                "quarto.quarto-vscode",
+                "atommaterial.a-file-icon-vscode"
+            ]
+        }
+    },
+
+    "postCreateCommand": "bash .devcontainer/setup.sh"
+}
