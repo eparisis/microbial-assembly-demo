@@ -1,4 +1,4 @@
-[![Tutorial](https://img.shields.io/badge/Tutorial-Phylogenomics-red.svg)](https://github.com/eparisis/microbial-assembly-demo)
+[![Tutorial](https://img.shields.io/badge/Tutorial-MAGs-red.svg)](https://github.com/eparisis/microbial-assembly-demo)
 [![Flye](https://img.shields.io/badge/Flye-blue.svg)](https://github.com/mikolmogorov/Flye)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 
